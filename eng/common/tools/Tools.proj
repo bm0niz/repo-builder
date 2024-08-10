@@ -1,0 +1,37 @@
+<Project>
+  <Import Project="BuildStep.props" />
+
+  <!-- Properties requires by NuGet.targets to restore PackageReferences -->
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <!-- Workaround changes from newer MSBuild requiring additional properties -->
+    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">5</TargetFrameworkVersion>
+    <TargetFrameworkIdentifier  Condition="'$(TargetFrameworkIdentifier)' == ''">.NETFramework</TargetFrameworkIdentifier>
+    <TargetFrameworkMoniker Condition="'$(TargetFrameworkMoniker)' == ''">.NETFramework,Version=v4.7.2</TargetFrameworkMoniker>
+    <MSBuildProjectExtensionsPath>$(BaseIntermediateOutputPath)</MSBuildProjectExtensionsPath>
+  </PropertyGroup>
+
+  <!--
+    Configure NuGet Restore to use NuGet.config file in the repository root.
+    We could drop a custom NuGet.config to the containing directory but it's simpler
+    if we use the same config for all restore operations.
+  -->
+  <PropertyGroup>
+    <RestoreConfigFile>$(RepoRoot)NuGet.config</RestoreConfigFile>
+  </PropertyGroup>
+
+  <Import Project="$(_NuGetRestoreTargets)" />
+
+  <PropertyGroup>
+    <_RepoToolManifest>$([MSBuild]::NormalizePath('$(RepoRoot)', '.config', 'dotnet-tools.json'))</_RepoToolManifest>
+  </PropertyGroup>
+
+  <Target Name="RestoreRepoTools"
+          Condition="'$(DotNetBuildFromSource)' != 'true' and Exists('$(_RepoToolManifest)')"
+          BeforeTargets="Restore">
+
+    <Exec Command='"$(DotNetTool)" tool restore' WorkingDirectory="$(RepoRoot)" />
+  </Target>
+
+  <Import Project="$(RepositoryEngineeringDir)Tools.props" Condition="Exists('$(RepositoryEngineeringDir)Tools.props')" />
+</Project>

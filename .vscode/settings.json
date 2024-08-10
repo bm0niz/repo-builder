@@ -1,0 +1,24 @@
+{
+  "editor.rulers": [120],
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "eslint.format.enable": true,
+  "omnisharp.enableEditorConfigSupport": true,
+  "omnisharp.enableMsBuildLoadProjectsOnDemand": true,
+  "omnisharp.organizeImportsOnFormat": true,
+  "omnisharp.useEditorFormattingSettings": true,
+  "omnisharp.useModernNet": true,
+  "csharp.semanticHighlighting.enabled": true,
+  "csharp.format.enable": true,
+  "[csharp]": {
+    "editor.defaultFormatter": "ms-dotnettools.csharp"
+  },
+  "workbench.tree.indent": 10,
+  "[javascript]": { "editor.defaultFormatter": "dbaeumer.vscode-eslint" },
+  "[javascriptreact]": { "editor.defaultFormatter": "dbaeumer.vscode-eslint" },
+  "[typescript]": { "editor.defaultFormatter": "dbaeumer.vscode-eslint" },
+  "[typescriptreact]": { "editor.defaultFormatter": "dbaeumer.vscode-eslint" }
+}

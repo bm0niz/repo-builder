@@ -1,0 +1,12 @@
+<Project>
+  <!-- Setup common tasks after build is finished -->
+
+  <Target Name="_RunAfterBuildAndPublish" AfterTargets="Build;Publish">
+    <Message Text="BUILD Concluded!!" Importance="high" />
+  </Target>
+
+  <Target Name="_RunAfterPack" AfterTargets="Pack">
+    <Message Text="PACK Concluded!!" Importance="high" />
+  </Target>
+
+</Project>

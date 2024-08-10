@@ -1,0 +1,16 @@
+<Project>
+  <!-- Global props -->
+
+  <PropertyGroup>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <IsPublishable>false</IsPublishable>
+    <IsPackable>false</IsPackable>
+    <WarnOnPackingNonPackableProject>false</WarnOnPackingNonPackableProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectToBuild Include="$(RepoRoot)samples\**\*.csproj" />
+  </ItemGroup>
+</Project>

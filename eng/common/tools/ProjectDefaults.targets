@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ItemGroup Condition="'$(PackageIcon)' != '' and '$(IsPackable)' == 'true'">
+    <None Include="$(PackageIconFullPath)" Pack="true" PackagePath="$(PackageIcon)" Visible="false" />
+  </ItemGroup>
+</Project>

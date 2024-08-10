@@ -1,0 +1,174 @@
+<Project DefaultTargets="Execute">
+  <!--
+  Required parameters:
+    RepoRoot                        Repository root.
+    Projects                        List of projects to build. Semicolon separated, may include globs.
+
+  Optional parameters:
+    Configuration                   Build configuration: "Debug", "Release", etc.
+    Restore                         "true" to restore toolset and solution
+    Build                           "true" to build solution
+    Rebuild                         "true" to rebuild solution
+    Deploy                          "true" to deploy assets (e.g. VSIXes)
+    Test                            "true" to run tests
+    IntegrationTest                 "true" to run integration tests
+    Pack                            "true" to build NuGet packages and VS insertion manifests
+    Publish                         "true" to publish artifacts (e.g. symbols)
+  -->
+
+  <PropertyGroup>
+    <_OriginalProjectsValue>$(Projects)</_OriginalProjectsValue>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ProjectToBuild>
+      <RestoreInParallel>true</RestoreInParallel>
+      <BuildInParallel>false</BuildInParallel>
+    </ProjectToBuild>
+  </ItemDefinitionGroup>
+
+  <Import Project="RepoLayout.props"/>
+
+  <Import Project="$(RepositoryEngineeringDir)Build.props" Condition="Exists('$(RepositoryEngineeringDir)Build.props')" />
+
+  <ItemGroup Condition="'$(Projects)' != ''">
+    <_OriginalProjectToBuild Include="@(ProjectToBuild)" />
+    <ProjectToBuild Remove="@(ProjectToBuild)" />
+    <ProjectToBuild Include="$(Projects)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'@(ProjectToBuild)' == ''">
+    <ProjectToBuild Include="$(RepoRoot)*.sln" />
+  </ItemGroup>
+
+  <Target Name="Execute">
+    <Error Text="No projects were found to build. Either the 'Projects' property or 'ProjectToBuild' item group must be specified." Condition="'@(ProjectToBuild)' == ''"/>
+    <Error Text="Property 'RepoRoot' must be specified" Condition="'$(RepoRoot)' == ''"/>
+    <Error Text="File 'global.json' must exist in directory specified by RepoRoot: '$(RepoRoot)'" Condition="'$(RepoRoot)' != '' and !Exists('$(RepoRoot)global.json')"/>
+
+    <PropertyGroup>
+      <_NuGetRestoreTargets Condition="Exists('$(MSBuildToolsPath)\NuGet.targets')" >$(MSBuildToolsPath)\NuGet.targets</_NuGetRestoreTargets>
+      <_NuGetRestoreTargets Condition="'$([MSBuild]::IsRunningFromVisualStudio())' == 'true' And Exists('$(MSBuildToolsPath32)\..\..\..\Common7\IDE\CommonExtensions\Microsoft\NuGet\NuGet.targets')">$(MSBuildToolsPath32)\..\..\..\Common7\IDE\CommonExtensions\Microsoft\NuGet\NuGet.targets</_NuGetRestoreTargets>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <_SolutionBuildTargets Include="Rebuild" Condition="'$(Rebuild)' == 'true'" />
+      <_SolutionBuildTargets Include="Build" Condition="'$(Build)' == 'true' and '$(Rebuild)' != 'true'" />
+      <_SolutionBuildTargets Include="Test" Condition="'$(Test)' == 'true'" />
+      <_SolutionBuildTargets Include="Pack" Condition="'$(Pack)' == 'true'" />
+      <_SolutionBuildTargets Include="IntegrationTest" Condition="'$(IntegrationTest)' == 'true'" />
+      <_SolutionBuildTargets Include="PerformanceTest" Condition="'$(PerformanceTest)' == 'true'" />
+    </ItemGroup>
+
+    <PropertyGroup>
+      <_RemoveProps>Projects;Restore;Deploy;Sign;Publish;@(_SolutionBuildTargets)</_RemoveProps>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <_CommonProps Include="Configuration=$(Configuration)"/>
+      <_CommonProps Include="RepoRoot=$(RepoRoot)"/>
+      <_CommonProps Include="VersionsPropsPath=$(VersionsPropsPath)"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(Restore)' == 'true'">
+      <_RestoreToolsProps Include="@(_CommonProps)"/>
+      <_RestoreToolsProps Include="BaseIntermediateOutputPath=$(ArtifactsToolsetDir)Common"/>
+      <_RestoreToolsProps Include="ExcludeRestorePackageImports=true"/>
+      <_RestoreToolsProps Include="_NuGetRestoreTargets=$(_NuGetRestoreTargets)"/>
+      <_RestoreToolsProps Include="Publish=$(Publish)"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <_PublishProps Include="@(_CommonProps)"/>
+      <_PublishProps Include="Publish=$(Publish)"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <_SolutionBuildProps Include="@(_CommonProps)"/>
+      <_SolutionBuildProps Include="__DeployProjectOutput=$(Deploy)" Condition="'$(Deploy)' != ''"/>
+    </ItemGroup>
+
+    <!--
+      Restore built-in tools.
+    -->
+    <MSBuild Projects="Tools.proj"
+             Targets="Restore"
+             Properties="@(_RestoreToolsProps);_NETCORE_ENGINEERING_TELEMETRY=Restore"
+             Condition="'$(Restore)' == 'true'"/>
+
+    <ItemGroup>
+      <_SolutionRestoreProps Include="@(_SolutionBuildProps)" />
+      <_SolutionRestoreProps Include="__BuildPhase=SolutionRestore" />
+      <_SolutionRestoreProps Include="MSBuildRestoreSessionId=$([System.Guid]::NewGuid())" />
+    </ItemGroup>
+
+    <PropertyGroup>
+      <RestoreUsingNuGetTargets Condition="'$(RestoreUsingNuGetTargets)' == ''">true</RestoreUsingNuGetTargets>
+    </PropertyGroup>
+
+    <!--
+      Detect which projects support restoring with NuGet targets.
+      As a perf optimization, the Properties list here should match exactly with
+      the properties passed to the "Restore" target a few lines below.
+      This helps MSBuild cache the result of _IsProjectRestoreSupported.
+      No need to call into the nuget internal target when restoring using
+      the new msbuild static graph APIs (RestoreUseStaticGraphEvaluation=true).
+    -->
+    <MSBuild Projects="@(ProjectToBuild)"
+             Properties="@(_SolutionRestoreProps)"
+             RemoveProperties="$(_RemoveProps)"
+             Targets="_IsProjectRestoreSupported"
+             SkipNonexistentTargets="true"
+             BuildInParallel="true"
+             Condition="'$(RestoreUsingNuGetTargets)' != 'false' and '%(ProjectToBuild.Extension)' != '.sln' and '%(ProjectToBuild.Extension)' != '.slnf' and '$(RestoreUseStaticGraphEvaluation)' != 'true' and '$(Restore)' == 'true'">
+
+      <Output TaskParameter="TargetOutputs" ItemName="_ProjectToRestoreWithNuGet" />
+    </MSBuild>
+
+    <PropertyGroup>
+      <!-- Normalize paths to avoid false warnings by NuGet about missing project references. -->
+      <_ProjectToRestoreWithNuGetList>@(_ProjectToRestoreWithNuGet->'%(FullPath)')</_ProjectToRestoreWithNuGetList>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <_ProjectToRestore Include="$(_NuGetRestoreTargets)" Condition="'$(_ProjectToRestoreWithNuGetList)' != '' and '$(RestoreUsingNuGetTargets)' != 'false'">
+        <AdditionalProperties>RestoreGraphProjectInput=$(_ProjectToRestoreWithNuGetList)</AdditionalProperties>
+        <RestoreInParallel>true</RestoreInParallel>
+      </_ProjectToRestore>
+
+      <!-- Invoke the 'Restore' target on solutions and projects which do not support NuGet. -->
+      <_ProjectToRestore Include="@(ProjectToBuild)" Exclude="@(_ProjectToRestoreWithNuGet)" />
+    </ItemGroup>
+
+    <MSBuild Projects="@(_ProjectToRestore)"
+             Properties="@(_SolutionRestoreProps)"
+             RemoveProperties="$(_RemoveProps);TreatWarningsAsErrors"
+             Targets="Restore"
+             SkipNonexistentTargets="true"
+             BuildInParallel="%(_ProjectToRestore.RestoreInParallel)"
+             Condition="'$(Restore)' == 'true'"/>
+
+    <!--
+      Build solution.
+    -->
+    <MSBuild Projects="@(ProjectToBuild)"
+             Properties="@(_SolutionBuildProps);__BuildPhase=SolutionBuild"
+             RemoveProperties="$(_RemoveProps)"
+             Targets="@(_SolutionBuildTargets)"
+             BuildInParallel="%(ProjectToBuild.BuildInParallel)"
+             Condition="'@(_SolutionBuildTargets)' != ''" />
+
+    <MSBuild Projects="AfterSolutionBuild.proj"
+             Properties="@(_CommonProps)"
+             Targets="@(_SolutionBuildTargets)"
+             Condition="'@(_SolutionBuildTargets)' != ''" />
+
+    <!--
+      Publish artifacts.
+    -->
+    <MSBuild Projects="@(ProjectToBuild)"
+             Properties="@(_PublishProps)"
+             Targets="Publish"
+             Condition="'$(Publish)' == 'true'"/>
+  </Target>
+</Project>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <Import Project="ProjectDefaults.targets" />
+  <Import Project="GenerateInternalsVisibleTo.targets" />
+  <Import Project="Version.targets"/>
+  <Import Project="Tests.targets" />
+</Project>

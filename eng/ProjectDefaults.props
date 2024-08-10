@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <!-- Props for nuget package info -->
+
+    <Company>My Company</Company>
+    <Copyright>© My Company. All rights reserved</Copyright>
+    <Authors>bm0niz</Authors>
+
+    <PackageIcon>Icon.png</PackageIcon>
+    <PackageIconFullPath>$(MSBuildThisFileDirectory)Assets\sample-logo.png</PackageIconFullPath>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,16 @@
+<Project>
+  <Import Project="..\..\Directory.Build.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <VersionPrefix>$(Project2Version)</VersionPrefix>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>10</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Project2.Api.IntegrationTests" />
+    <InternalsVisibleTo Include="Project2.Lib.Tests" />
+  </ItemGroup>
+</Project>

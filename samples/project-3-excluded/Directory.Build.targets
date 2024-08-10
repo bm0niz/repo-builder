@@ -1,0 +1,4 @@
+<Project>
+  <!-- This is an empty Directory.Build.targets file to prevent the Directory.Build.targets file from the repo from being used
+       if the toolset package is restored to a subdirectory in the repo -->
+</Project>

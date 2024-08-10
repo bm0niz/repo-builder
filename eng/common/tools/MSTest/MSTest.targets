@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.TestPlatform" Version="$(MicrosoftTestPlatformVersion)" IsImplicitlyDefined="true" PrivateAssets="all" Publish="true"/>
+    <PackageReference Include="MSTest.TestFramework" Version="$(MSTestTestFrameworkVersion)" IsImplicitlyDefined="true" PrivateAssets="all" Publish="true"/>
+    <PackageReference Include="MSTest.TestAdapter" Version="$(MSTestTestAdapterVersion)" IsImplicitlyDefined="true" PrivateAssets="all" Publish="true"/>
+  </ItemGroup>
+
+  <Import Project="..\VSTest.targets"/>
+</Project>

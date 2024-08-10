@@ -1,0 +1,12 @@
+<Project>
+  <!-- Global versions for projects and packages -->
+
+  <PropertyGroup Label="projects">
+    <Project1Version>1.0.0</Project1Version>
+    <Project2Version>2.0.0</Project2Version>
+  </PropertyGroup>
+
+  <PropertyGroup Label="libraries">
+    <DotNetVersion>6.0.*</DotNetVersion>
+  </PropertyGroup>
+</Project>
